@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ROTATE_ANGLE=90
+
+NAUTILUS_SCRIPTS_DIR=~/.local/share/nautilus/scripts
+
+source $NAUTILUS_SCRIPTS_DIR/rotate_90

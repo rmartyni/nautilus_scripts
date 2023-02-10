@@ -1,0 +1,46 @@
+#!/bin/bash
+
+ORG_DIR=org
+LOG=$ORG_DIR/log.txt
+
+if [ -z "${RESIZE}" ]; then 
+    RESIZE=30%
+fi
+
+fail()
+{
+    echo "$@" >> $LOG
+    /usr/bin/notify-send "$@"
+    exit 1
+}
+
+resizeFiles()
+{
+    RESIZE=$1
+    echo $RESIZE > $LOG
+    echo "Files:"$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS >> $LOG
+
+    # Check if we can make backup
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
+    do
+        FILE=${FPATH##*/}
+        if [ -e $ORG_DIR/$FILE ]; then
+            fail "File already exists $DEST_DIR/$FILE"
+        fi
+    done
+
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
+    do
+        FILE=${FPATH##*/}
+        echo "Processing file:"$FILE >> $LOG
+
+        /usr/bin/mv ${FILE} ${ORG_DIR}/${FILE}
+        [[ $? -eq 0 ]] || fail "Failed moving file: ${FILE} to ${ORG_DIR}/${FILE}"
+
+        /usr/bin/convert -resize $RESIZE ${ORG_DIR}/${FILE} ${FILE}
+        [[ $? -eq 0 ]] || fail "Failed converting file: ${FILE}"
+    done
+}
+
+mkdir $ORG_DIR
+resizeFiles $RESIZE

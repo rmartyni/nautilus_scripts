@@ -1,0 +1,7 @@
+#!/bin/bash
+
+RESIZE=40%
+
+NAUTILUS_SCRIPTS_DIR=~/.local/share/nautilus/scripts
+
+source $NAUTILUS_SCRIPTS_DIR/resize_30
