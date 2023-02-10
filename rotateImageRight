@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ROTATE_ANGLE=90
+
+source ~/.local/share/nautilus/scripts/rotate_90

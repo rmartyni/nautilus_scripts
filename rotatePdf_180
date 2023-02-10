@@ -1,0 +1,36 @@
+#!/bin/bash
+
+if [ -z "${ROTATE_COMMAND}" ]; then 
+    ROTATE_COMMAND=1-endsouth
+fi
+
+fail()
+{
+    /usr/bin/notify-send "$@"
+    exit 1
+}
+
+rotatePdf()
+{
+    ROTATE_COMMAND=$1
+
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
+    do
+        FILE=${FPATH##*/}
+        NEW_FILE=`echo "${FILE}" | cut -d'.' -f1`_R.pdf
+        if [ -e $NEW_FILE ]; then
+            fail "File already exists $NEW_FILE"
+        fi
+    done
+    
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
+    do
+        FILE=${FPATH##*/}
+        NEW_FILE=`echo "${FILE}" | cut -d'.' -f1`_R.pdf
+        /usr/bin/pdftk ${FILE} cat $ROTATE_COMMAND output $NEW_FILE
+        [[ $? -eq 0 ]] || fail "Failed rotating $FILE"
+    done
+}
+
+mkdir $DEST_DIR
+rotatePdf $ROTATE_COMMAND
