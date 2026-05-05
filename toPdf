@@ -1,0 +1,48 @@
+#!/bin/bash
+
+WORK_DIR=tmp_pdf
+ORG_DIR=${WORK_DIR}/org/
+
+fail()
+{
+    /usr/bin/notify-send "$@"
+    exit 1
+}
+
+toPdf()
+{   
+    # Check if we can create output files
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
+    do
+        FILE=${FPATH##*/}
+        NAME=`echo "${FILE}" | cut -d'.' -f1`
+        OUTPUT=$NAME.pdf
+        if [ -e $OUTPUT ]; then
+            fail "File already exists $OUTPUT"
+        fi
+    done
+
+    if [ -e $WORK_DIR ]; then
+        fail "Folder exists $WORK_DIR"
+    fi
+    mkdir -p $ORG_DIR
+
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
+    do
+        FILE=${FPATH##*/}
+        NAME=`echo "${FILE}" | cut -d'.' -f1`
+        /usr/bin/convert ${FILE} ${WORK_DIR}/${NAME}.jpg
+        [[ $? -eq 0 ]] || fail "Failed converting ${FILE} to ${WORK_DIR}/${NAME}.jpg"
+        /usr/bin/convert ${WORK_DIR}/${NAME}.jpg -resize 2480x3508 -gravity center -background white -extent 2480x3508 ${NAME}.pdf
+        [[ $? -eq 0 ]] || fail "Failed converting ${WORK_DIR}/${NAME}.jpg to ${NAME}.pdf"
+    done    
+    
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
+    do
+        FILE=${FPATH##*/}
+        NAME=`echo "${FILE}" | cut -d'.' -f1`
+        mv ${FILE} ${ORG_DIR}/
+    done
+}
+
+toPdf

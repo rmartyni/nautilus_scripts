@@ -1,34 +1,35 @@
 #!/bin/bash
 
-if [ -z "${ROTATE_COMMAND}" ]; then 
-    ROTATE_COMMAND=1-endsouth
+PDFTK="/snap/bin/pdftk"
+
+if [[ -z "${ROTATE_COMMAND}" ]]; then 
+    ROTATE_COMMAND=1-enddown
 fi
 
-fail()
-{
+fail() {
     /usr/bin/notify-send "$@"
     exit 1
 }
 
-rotatePdf()
-{
+rotatePdf() {
     ROTATE_COMMAND=$1
 
-    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
-    do
+    # Check for output files conflicts
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS; do
         FILE=${FPATH##*/}
         NEW_FILE=`echo "${FILE}" | cut -d'.' -f1`_R.pdf
-        if [ -e $NEW_FILE ]; then
-            fail "File already exists $NEW_FILE"
+        if [[ -e "$NEW_FILE" ]]; then
+            fail "File exists: $NEW_FILE"
         fi
     done
-    
-    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS
-    do
+
+    # Rotate
+    for FPATH in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS; do
         FILE=${FPATH##*/}
         NEW_FILE=`echo "${FILE}" | cut -d'.' -f1`_R.pdf
-        /usr/bin/pdftk ${FILE} cat $ROTATE_COMMAND output $NEW_FILE
-        [[ $? -eq 0 ]] || fail "Failed rotating $FILE"
+        if ! $PDFTK ${FILE} cat $ROTATE_COMMAND output $NEW_FILE; then
+            fail "Failed totating: $FILE"
+        fi
     done
 }
 

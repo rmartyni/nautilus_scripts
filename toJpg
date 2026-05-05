@@ -12,7 +12,7 @@ toJpg() {
     # Convert list to table
     mapfile -t FILES < <(printf '%s\n' "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed '/^$/d')
 
-    # Check for output files conflicts    
+    # Check for output files conflicts
     for FPATH in "${FILES[@]}"; do
         FILE="${FPATH##*/}"
         NAME="${FILE%.*}"

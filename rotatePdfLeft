@@ -1,5 +1,0 @@
-#!/bin/bash
-
-ROTATE_COMMAND=1-endeast
-
-source ~/.local/share/nautilus/scripts/rotate_pdf_180
