@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script merges all selected PDF files into a single PDF file.
+# The output is written to "output.pdf" in the current working directory.
+# If the output file already exists, the script aborts to prevent overwriting.
+
 OUTPUT_FILE="output.pdf"
 PDFUNITE="/usr/bin/pdfunite"
 
