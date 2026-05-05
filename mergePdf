@@ -1,16 +1,16 @@
 #!/bin/bash
 
-OUTPUT_FILE=output.pdf
+OUTPUT_FILE="output.pdf"
+PDFUNITE="/usr/bin/pdfunite"
 
-message()
-{
+message() {
     /usr/bin/notify-send "$@"
 }
 
-if [ -e $OUTPUT_FILE ]; then
-  message "Output file already exists $OUTPUT_FILE"
+if [[ -e "$OUTPUT_FILE" ]]; then
+  message "File already exists: $OUTPUT_FILE"
   exit 1
 fi
 
-/usr/bin/pdfunite $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS $OUTPUT_FILE
+$PDFUNITE $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS $OUTPUT_FILE
 [[ $? -eq 0 ]] || message "pdfunite failed"

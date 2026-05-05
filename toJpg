@@ -1,0 +1,49 @@
+#!/bin/bash
+
+ORG_DIR="org_to_jpg"
+CONVERT="/usr/bin/convert"
+
+fail() {
+    /usr/bin/notify-send "$@"
+    exit 1
+}
+
+toJpg() {
+    # Convert list to table
+    mapfile -t FILES < <(printf '%s\n' "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed '/^$/d')
+
+    # Check for output files conflicts    
+    for FPATH in "${FILES[@]}"; do
+        FILE="${FPATH##*/}"
+        NAME="${FILE%.*}"
+        OUTPUT="${NAME}.jpg"
+        if [[ -e "$OUTPUT" ]]; then
+            fail "File exists: $OUTPUT"
+        fi
+    done
+
+    if [[ -e "$ORG_DIR" ]]; then
+        fail "Directory exists: $ORG_DIR"
+    fi
+
+    mkdir -p "$ORG_DIR"
+
+    # Conversion to jpg
+    for FPATH in "${FILES[@]}"; do
+        FILE="${FPATH##*/}"
+        NAME="${FILE%.*}"
+        OUTPUT="${NAME}.jpg"
+
+        if ! $CONVERT "$FILE" "$OUTPUT"; then
+            fail "Failed converting: $FILE to $OUTPUT"
+        fi
+    done
+
+    # Move org files
+    for FPATH in "${FILES[@]}"; do
+        FILE="${FPATH##*/}"
+        mv "$FILE" "$ORG_DIR/"
+    done
+}
+
+toJpg
