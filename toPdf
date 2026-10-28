@@ -1,0 +1,63 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Radosław Martyniszyn
+
+ORIGINALS_DIR="originals_pdf_$(date +%Y-%m-%d_%H%M)"
+CONVERT="$(command -v magick || command -v convert)"
+
+fail()
+{
+    /usr/bin/notify-send "$@"
+    exit 1
+}
+
+toPdf()
+{
+    if [[ -z "$CONVERT" ]]; then
+        fail "Missing ImageMagick (install imagemagick)"
+    fi
+
+    if [[ -e "$ORIGINALS_DIR" ]]; then
+        fail "Folder already exists: $ORIGINALS_DIR"
+    fi
+
+    # Convert list to table
+    mapfile -t FILES < <(printf '%s\n' "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed '/^$/d')
+
+    # Check if we can create output files
+    declare -A OUTPUTS
+    for FPATH in "${FILES[@]}"
+    do
+        FILE="${FPATH##*/}"
+        NAME="${FILE%.*}"
+        OUTPUT="$NAME.pdf"
+        if [ -e "$OUTPUT" ]; then
+            fail "File already exists: $OUTPUT"
+        fi
+        if [[ -n "${OUTPUTS[$OUTPUT]}" ]]; then
+            fail "Same output name for ${OUTPUTS[$OUTPUT]} and $FILE: $OUTPUT"
+        fi
+        OUTPUTS[$OUTPUT]="$FILE"
+    done
+
+    mkdir -p "$ORIGINALS_DIR"
+
+    # Conversion to pdf
+    for FPATH in "${FILES[@]}"
+    do
+        FILE="${FPATH##*/}"
+        NAME="${FILE%.*}"
+        "$CONVERT" "$FILE" -resize 2480x3508 -gravity center -background white -extent 2480x3508 \
+            -units PixelsPerInch -density 300 -compress jpeg -quality 92 "$NAME.pdf"
+        [[ $? -eq 0 ]] || fail "Failed converting ${FILE} to ${NAME}.pdf"
+    done
+    
+    # Move original files
+    for FPATH in "${FILES[@]}"
+    do
+        FILE="${FPATH##*/}"
+        mv "$FILE" "$ORIGINALS_DIR/"
+    done
+}
+
+toPdf

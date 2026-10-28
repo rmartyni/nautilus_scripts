@@ -1,0 +1,28 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Radosław Martyniszyn
+
+# This script merges all selected PDF files into a single PDF file.
+# The output is written to "output.pdf" in the current working directory.
+# If the output file already exists, the script aborts to prevent overwriting.
+
+OUTPUT_FILE="output.pdf"
+PDFUNITE="/usr/bin/pdfunite"
+
+message() {
+    /usr/bin/notify-send "$@"
+}
+
+if [[ ! -x "$PDFUNITE" ]]; then
+  message "Missing $PDFUNITE (install poppler-utils)"
+  exit 1
+fi
+
+if [[ -e "$OUTPUT_FILE" ]]; then
+  message "File already exists: $OUTPUT_FILE"
+  exit 1
+fi
+
+mapfile -t FILES < <(printf '%s\n' "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed '/^$/d')
+
+"$PDFUNITE" "${FILES[@]}" "$OUTPUT_FILE" || message "pdfunite failed"

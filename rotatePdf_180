@@ -1,0 +1,45 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Radosław Martyniszyn
+
+PDFTK="/snap/bin/pdftk"
+
+if [[ -z "${ROTATE_COMMAND}" ]]; then 
+    ROTATE_COMMAND=1-enddown
+fi
+
+fail() {
+    /usr/bin/notify-send "$@"
+    exit 1
+}
+
+rotatePdf() {
+    ROTATE_COMMAND=$1
+
+    if [[ ! -x "$PDFTK" ]]; then
+        fail "Missing $PDFTK (install pdftk: snap install pdftk)"
+    fi
+
+    # Convert list to table
+    mapfile -t FILES < <(printf '%s\n' "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed '/^$/d')
+
+    # Check for output files conflicts
+    for FPATH in "${FILES[@]}"; do
+        FILE="${FPATH##*/}"
+        NEW_FILE="${FILE%.*}_R.pdf"
+        if [[ -e "$NEW_FILE" ]]; then
+            fail "File already exists: $NEW_FILE"
+        fi
+    done
+
+    # Rotate
+    for FPATH in "${FILES[@]}"; do
+        FILE="${FPATH##*/}"
+        NEW_FILE="${FILE%.*}_R.pdf"
+        if ! "$PDFTK" "$FILE" cat $ROTATE_COMMAND output "$NEW_FILE"; then
+            fail "Failed rotating: $FILE"
+        fi
+    done
+}
+
+rotatePdf "$ROTATE_COMMAND"

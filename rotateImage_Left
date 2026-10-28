@@ -1,0 +1,56 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Radosław Martyniszyn
+
+ORIGINALS_DIR="originals_rotate_$(date +%Y-%m-%d_%H%M)"
+CONVERT="$(command -v magick || command -v convert)"
+JPEGTRAN="$(command -v jpegtran)"
+
+if [[ -z "${ROTATE_ANGLE}" ]]; then 
+    ROTATE_ANGLE=-90
+fi
+
+fail() {
+    /usr/bin/notify-send "$@"
+    exit 1
+}
+
+rotateFiles()
+{
+    ROTATE_ANGLE=$1
+    # jpegtran accepts only 90, 180 and 270
+    JPEG_ANGLE=$(( (ROTATE_ANGLE % 360 + 360) % 360 ))
+
+    if [[ -z "$CONVERT" ]]; then
+        fail "Missing ImageMagick (install imagemagick)"
+    fi
+
+    if [[ -e "$ORIGINALS_DIR" ]]; then
+        fail "Folder already exists: $ORIGINALS_DIR"
+    fi
+
+    # Convert list to table
+    mapfile -t FILES < <(printf '%s\n' "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed '/^$/d')
+
+    mkdir -p "$ORIGINALS_DIR"
+
+    # Make backup and convert. Abort in case of error
+    for FPATH in "${FILES[@]}"; do
+        FILE="${FPATH##*/}"
+
+        /usr/bin/mv "$FILE" "$ORIGINALS_DIR/$FILE"
+        [[ $? -eq 0 ]] || fail "Failed moving file: ${FILE} to ${ORIGINALS_DIR}/${FILE}"
+
+        # Lossless rotation for JPEG. -perfect fails when image size is not
+        # a multiple of the JPEG block size; then fall back to convert.
+        if [[ -n "$JPEGTRAN" && "${FILE,,}" =~ \.jpe?g$ ]] &&
+            "$JPEGTRAN" -copy all -perfect -rotate "$JPEG_ANGLE" -outfile "$FILE" "$ORIGINALS_DIR/$FILE" 2>/dev/null; then
+            continue
+        fi
+
+        "$CONVERT" "$ORIGINALS_DIR/$FILE" -rotate "$ROTATE_ANGLE" "$FILE"
+        [[ $? -eq 0 ]] || fail "Failed converting file: ${FILE}"
+    done
+}
+
+rotateFiles "$ROTATE_ANGLE"

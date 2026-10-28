@@ -1,0 +1,52 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Radosław Martyniszyn
+
+ORIGINALS_DIR="originals_resize_$(date +%Y-%m-%d_%H%M)"
+LOG=$ORIGINALS_DIR/log.txt
+CONVERT="$(command -v magick || command -v convert)"
+
+if [ -z "${RESIZE}" ]; then 
+    RESIZE=30%
+fi
+
+fail()
+{
+    [[ -d "$ORIGINALS_DIR" ]] && echo "$@" >> "$LOG"
+    /usr/bin/notify-send "$@"
+    exit 1
+}
+
+resizeFiles()
+{
+    RESIZE=$1
+
+    if [[ -z "$CONVERT" ]]; then
+        fail "Missing ImageMagick (install imagemagick)"
+    fi
+
+    if [[ -e "$ORIGINALS_DIR" ]]; then
+        fail "Folder already exists: $ORIGINALS_DIR"
+    fi
+
+    # Convert list to table
+    mapfile -t FILES < <(printf '%s\n' "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | sed '/^$/d')
+
+    mkdir -p "$ORIGINALS_DIR"
+    echo "$RESIZE" > "$LOG"
+    echo "Files:$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" >> "$LOG"
+
+    for FPATH in "${FILES[@]}"
+    do
+        FILE="${FPATH##*/}"
+        echo "Processing file:$FILE" >> "$LOG"
+
+        /usr/bin/mv "$FILE" "$ORIGINALS_DIR/$FILE"
+        [[ $? -eq 0 ]] || fail "Failed moving file: ${FILE} to ${ORIGINALS_DIR}/${FILE}"
+
+        "$CONVERT" "$ORIGINALS_DIR/$FILE" -resize "$RESIZE" "$FILE"
+        [[ $? -eq 0 ]] || fail "Failed converting file: ${FILE}"
+    done
+}
+
+resizeFiles "$RESIZE"
